@@ -1,10 +1,17 @@
 import os
 import json
 import csv
+import random
 import time
 import datetime
 import pygame
 import threading
+import requests
+import sys
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, \
+    QPushButton, QCheckBox, QRadioButton, QButtonGroup, QLineEdit
+from PyQt5.QtGui import QIcon,QFont,QPixmap
+from PyQt5.QtCore import Qt
 
 #exception handling - try except finally
 try:
@@ -179,8 +186,143 @@ chore3=threading.Thread(target=get_mail)
 chore3.start()
 
 #.join - wait till all chores are complete
-chore1.join()
-chore2.join()
-chore3.join()
+# chore1.join()
+# chore2.join()
+# chore3.join()
 
-print("All chore sre complete")
+print("All chore are complete")
+
+#GUI PyQt5
+# Boiler plate for a window
+# class MainWindow(QMainWindow):
+#     def __init__(self):
+#         super().__init__()
+# def main():
+#     app=QApplication(sys.argv)
+#     window=MainWindow()
+#     window.show()
+#     sys.exit(app.exec_())
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Anime")
+        self.setGeometry(100,100,600,500) #x,y,width,height
+        self.setWindowIcon(QIcon("icon.jpeg"))
+
+        label=QLabel("Top Anime",self) #self is the parent widget of label
+        label2=QLabel(self)
+        label2.setGeometry(0,0,50,50)
+        label.setGeometry(0,0,250,250)
+        label.setFont(QFont("Bookman Old Style",20))
+        label.setStyleSheet("background-color:#68937C;")
+        label.setAlignment(Qt.AlignCenter)
+        pixmap=QPixmap("icon.jpeg")
+        #image
+        label2.setPixmap(pixmap)
+        label.width()
+        label.height()
+        #left justify - self.width()-label.width()
+        #bottom justify - self.height-label.height()
+        label2.setScaledContents(True)# set image to the label
+        label.setGeometry((self.width()-label.width())//2,0,200,50)
+        label.setScaledContents(True)
+        #layouts
+        central_widget = QWidget()
+        self.setCentralWidget(central_widget)
+        label1 = QLabel("#1", self)
+        label2 = QLabel("#2", self)
+        label3 = QLabel("#3", self)
+        label4 = QLabel("#4", self)
+        label5 = QLabel("#5", self)
+        label1.setStyleSheet("background-color:red")
+        label2.setStyleSheet("background-color:yellow")
+        label3.setStyleSheet("background-color:green")
+        label4.setStyleSheet("background-color:blue")
+        label5.setStyleSheet("background-color:black")
+        grid = QGridLayout()
+        # vbox.addWidget(label1)
+        # hbox.addWidget(label1)
+        grid.addWidget(label1, 0, 0)
+        grid.addWidget(label2, 0, 1)
+        grid.addWidget(label3, 1, 0)
+        grid.addWidget(label4, 1, 1)
+        grid.addWidget(label5, 3, 2)
+        central_widget.setLayout(grid)
+        self.button = QPushButton("Search", self)
+        self.checkbox=QCheckBox("Do you like food? ",label1)
+        self.radio1=QRadioButton("Filter",label2)
+        #making separate groups for radio btns
+        self.button_grp1=QButtonGroup(self)
+        self.button_grp2=QButtonGroup(self)
+
+        self.textbox=QLineEdit(self)
+        self.initui()
+    def initui(self):
+        #buttons
+        # button=QPushButton("Search",self) #button.setGeometry(150,200,100,20)
+        # self.button = QPushButton("Search", self)#move to constructor
+        self.button.setObjectName("button1") # for css
+        self.button.setStyleSheet("font-size:30px;")
+        self.button.clicked.connect(self.on_click)
+        #checkbox
+        self.checkbox.setStyleSheet("font-size:30px")
+        self.checkbox.setGeometry(10,10,200,30)
+        self.checkbox.stateChanged.connect(self.on_check)
+        #radio btn -select one
+        self.setStyleSheet("QRadioButton{"
+                           "font-size:40px"
+                           "}")   #style to all QRadioButtons
+        self.button_grp1.addButton(self.radio1)
+        self.radio1.toggled.connect(self.radio_btn_change)
+        #line edit widget
+        self.textbox.setGeometry(10, 10, 200, 30)
+    def on_click(self):
+        anime_type=self.textbox.text()
+        self.button.setText("Clicked")
+
+        # connecting api
+        base_url = "https://api.jikan.moe/v4/top/anime?type="
+
+        def get_top_anime_by_type(name):
+            # returns an object
+            url = f"{base_url}{name}"
+            response = requests.get(url)
+            if response.status_code == 200:
+                return response.json()
+            else:
+                print(f"Failed to retrieve data {response.status_code}")
+
+        # types=("tv","movie","ova","special","ona","music","cm","pv","tv_special")
+        # type=random.choice(types)
+        animes = get_top_anime_by_type(anime_type)["data"]
+        # print(animes)
+        if animes:
+            print(f"Anime Type: {anime_type}")
+            for anime in animes:
+                print()
+                print(f"Anime Name: {anime["title_english"] if anime["title_english"] else anime["title"]}")
+                print(f"Number of Episodes:{anime["episodes"]}")
+                print(f"Status:{anime["status"]}")
+                print(f"Duration:{anime["duration"]}")
+                print(f"Score:{anime["score"]}")
+    def on_check(self,state):
+        # print(state) # 2
+        if state==Qt.Checked:
+            self.button.setText("red")
+        else:
+            self.button.setText("Search")
+    def radio_btn_change(self):
+        radio_btn=self.sender() #becomes the sender
+        if radio_btn.isChecked():
+            print(f"{radio_btn.text()} is Checked")
+        # else:
+        #     print(f"{radio_btn.text()} is not Checked")
+
+def main():
+    app=QApplication(sys.argv)
+    window=MainWindow()
+    window.show()
+
+    sys.exit(app.exec_())
+if __name__=="__main__":
+    main()
